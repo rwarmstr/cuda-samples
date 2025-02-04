@@ -9,6 +9,7 @@ find_package(CUDAToolkit REQUIRED)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 set(CMAKE_CUDA_ARCHITECTURES all-major)
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")  # enable cuda-gdb (expensive)
 endif()
@@ -20,7 +21,7 @@ include_directories(../../../Common)
 # Add target for asyncAPI
 add_executable(matrixMul matrixMul.cu)
 
-target_compile_options(matrixMul PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets --extended-lambda")
 
 target_compile_features(matrixMul PRIVATE cxx_std_17 cuda_std_17)
 
