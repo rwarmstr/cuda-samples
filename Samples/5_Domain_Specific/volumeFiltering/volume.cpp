@@ -29,64 +29,62 @@
 #include <cuda_runtime.h>
 
 // Helper functions
-#include <helper_cuda.h>
-#include <helper_math.h>
 #include "volume.h"
 
-void Volume_init(Volume *vol, cudaExtent dataSize, void *h_data,
-                 int allowStore) {
-  // create 3D array
-  vol->channelDesc = cudaCreateChannelDesc<VolumeType>();
-  checkCudaErrors(
-      cudaMalloc3DArray(&vol->content, &vol->channelDesc, dataSize,
-                        allowStore ? cudaArraySurfaceLoadStore : 0));
-  vol->size = dataSize;
+#include <helper_cuda.h>
+#include <helper_math.h>
 
-  if (h_data) {
-    // copy data to 3D array
-    cudaMemcpy3DParms copyParams = {0};
-    copyParams.srcPtr =
-        make_cudaPitchedPtr(h_data, dataSize.width * sizeof(VolumeType),
-                            dataSize.width, dataSize.height);
-    copyParams.dstArray = vol->content;
-    copyParams.extent = dataSize;
-    copyParams.kind = cudaMemcpyHostToDevice;
-    checkCudaErrors(cudaMemcpy3D(&copyParams));
-  }
+void Volume_init(Volume *vol, cudaExtent dataSize, void *h_data, int allowStore)
+{
+    // create 3D array
+    vol->channelDesc = cudaCreateChannelDesc<VolumeType>();
+    checkCudaErrors(
+        cudaMalloc3DArray(&vol->content, &vol->channelDesc, dataSize, allowStore ? cudaArraySurfaceLoadStore : 0));
+    vol->size = dataSize;
 
-  if (allowStore) {
-    cudaResourceDesc surfRes;
-    memset(&surfRes, 0, sizeof(cudaResourceDesc));
-    surfRes.resType = cudaResourceTypeArray;
-    surfRes.res.array.array = vol->content;
+    if (h_data) {
+        // copy data to 3D array
+        cudaMemcpy3DParms copyParams = {0};
+        copyParams.srcPtr =
+            make_cudaPitchedPtr(h_data, dataSize.width * sizeof(VolumeType), dataSize.width, dataSize.height);
+        copyParams.dstArray = vol->content;
+        copyParams.extent   = dataSize;
+        copyParams.kind     = cudaMemcpyHostToDevice;
+        checkCudaErrors(cudaMemcpy3D(&copyParams));
+    }
 
-    checkCudaErrors(cudaCreateSurfaceObject(&vol->volumeSurf, &surfRes));
-  }
+    if (allowStore) {
+        cudaResourceDesc surfRes;
+        memset(&surfRes, 0, sizeof(cudaResourceDesc));
+        surfRes.resType         = cudaResourceTypeArray;
+        surfRes.res.array.array = vol->content;
 
-  cudaResourceDesc texRes;
-  memset(&texRes, 0, sizeof(cudaResourceDesc));
+        checkCudaErrors(cudaCreateSurfaceObject(&vol->volumeSurf, &surfRes));
+    }
 
-  texRes.resType = cudaResourceTypeArray;
-  texRes.res.array.array = vol->content;
+    cudaResourceDesc texRes;
+    memset(&texRes, 0, sizeof(cudaResourceDesc));
 
-  cudaTextureDesc texDescr;
-  memset(&texDescr, 0, sizeof(cudaTextureDesc));
+    texRes.resType         = cudaResourceTypeArray;
+    texRes.res.array.array = vol->content;
 
-  texDescr.normalizedCoords = true;
-  texDescr.filterMode = cudaFilterModeLinear;
-  texDescr.addressMode[0] = cudaAddressModeWrap;
-  texDescr.addressMode[1] = cudaAddressModeWrap;
-  texDescr.addressMode[2] = cudaAddressModeWrap;
-  texDescr.readMode =
-      cudaReadModeNormalizedFloat;  // VolumeTypeInfo<VolumeType>::readMode;
+    cudaTextureDesc texDescr;
+    memset(&texDescr, 0, sizeof(cudaTextureDesc));
 
-  checkCudaErrors(
-      cudaCreateTextureObject(&vol->volumeTex, &texRes, &texDescr, NULL));
+    texDescr.normalizedCoords = true;
+    texDescr.filterMode       = cudaFilterModeLinear;
+    texDescr.addressMode[0]   = cudaAddressModeWrap;
+    texDescr.addressMode[1]   = cudaAddressModeWrap;
+    texDescr.addressMode[2]   = cudaAddressModeWrap;
+    texDescr.readMode         = cudaReadModeNormalizedFloat; // VolumeTypeInfo<VolumeType>::readMode;
+
+    checkCudaErrors(cudaCreateTextureObject(&vol->volumeTex, &texRes, &texDescr, NULL));
 }
 
-void Volume_deinit(Volume *vol) {
-  checkCudaErrors(cudaDestroyTextureObject(vol->volumeTex));
-  checkCudaErrors(cudaDestroySurfaceObject(vol->volumeSurf));
-  checkCudaErrors(cudaFreeArray(vol->content));
-  vol->content = 0;
+void Volume_deinit(Volume *vol)
+{
+    checkCudaErrors(cudaDestroyTextureObject(vol->volumeTex));
+    checkCudaErrors(cudaDestroySurfaceObject(vol->volumeSurf));
+    checkCudaErrors(cudaFreeArray(vol->content));
+    vol->content = 0;
 }

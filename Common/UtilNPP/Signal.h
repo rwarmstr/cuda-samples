@@ -31,138 +31,112 @@
 
 #include <cstring>
 
-namespace npp
+namespace npp {
+class Signal
 {
-    class Signal
+public:
+    Signal()
+        : nSize_(0){};
+
+    explicit Signal(size_t nSize)
+        : nSize_(nSize){};
+
+    Signal(const Signal &rSignal)
+        : nSize_(rSignal.nSize_){};
+
+    virtual ~Signal() {}
+
+    Signal &operator=(const Signal &rSignal)
     {
-        public:
-            Signal() : nSize_(0)
-            { };
+        nSize_ = rSignal.nSize_;
+        return *this;
+    }
 
-            explicit
-            Signal(size_t nSize) : nSize_(nSize)
-            { };
+    size_t size() const { return nSize_; }
 
-            Signal(const Signal &rSignal) : nSize_(rSignal.nSize_)
-            { };
-
-            virtual
-            ~Signal()
-            { }
-
-            Signal &
-            operator= (const Signal &rSignal)
-            {
-                nSize_ = rSignal.nSize_;
-                return *this;
-            }
-
-            size_t
-            size()
-            const
-            {
-                return nSize_;
-            }
-
-            void
-            swap(Signal &rSignal)
-            {
-                size_t nTemp = nSize_;
-                nSize_ = rSignal.nSize_;
-                rSignal.nSize_ = nTemp;
-            }
-
-
-        private:
-            size_t nSize_;
-    };
-
-    template<typename D, class A>
-    class SignalTemplate: public Signal
+    void swap(Signal &rSignal)
     {
-        public:
-            typedef D tData;
+        size_t nTemp   = nSize_;
+        nSize_         = rSignal.nSize_;
+        rSignal.nSize_ = nTemp;
+    }
 
-            SignalTemplate(): aValues_(0)
-            {
-                ;
-            }
 
-            SignalTemplate(size_t nSize): Signal(nSize)
-                , aValues_(0)
-            {
-                aValues_ = A::Malloc1D(size());
-            }
+private:
+    size_t nSize_;
+};
 
-            SignalTemplate(const SignalTemplate<D, A> &rSignal): Signal(rSignal)
-                , aValues_(0)
-            {
-                aValues_ = A::Malloc1D(size());
-                A::Copy1D(aValues_, rSignal.values(), size());
-            }
+template <typename D, class A> class SignalTemplate : public Signal
+{
+public:
+    typedef D tData;
 
-            virtual
-            ~SignalTemplate()
-            {
-                A::Free1D(aValues_);
-            }
+    SignalTemplate()
+        : aValues_(0)
+    {
+        ;
+    }
 
-            SignalTemplate &
-            operator= (const SignalTemplate<D, A> &rSignal)
-            {
-                // in case of self-assignment
-                if (&rSignal == this)
-                {
-                    return *this;
-                }
+    SignalTemplate(size_t nSize)
+        : Signal(nSize)
+        , aValues_(0)
+    {
+        aValues_ = A::Malloc1D(size());
+    }
 
-                A::Free1D(aValues_);
-                this->aPixels_ = 0;
+    SignalTemplate(const SignalTemplate<D, A> &rSignal)
+        : Signal(rSignal)
+        , aValues_(0)
+    {
+        aValues_ = A::Malloc1D(size());
+        A::Copy1D(aValues_, rSignal.values(), size());
+    }
 
-                // assign parent class's data fields (width, height)
-                Signal::operator =(rSignal);
+    virtual ~SignalTemplate() { A::Free1D(aValues_); }
 
-                aValues_ = A::Malloc1D(size());
-                A::Copy1D(aValues_, rSignal.value(), size());
+    SignalTemplate &operator=(const SignalTemplate<D, A> &rSignal)
+    {
+        // in case of self-assignment
+        if (&rSignal == this) {
+            return *this;
+        }
 
-                return *this;
-            }
+        A::Free1D(aValues_);
+        this->aPixels_ = 0;
 
-            /// Get a pointer to the pixel array.
-            ///     The result pointer can be offset to pixel at position (x, y) and
-            /// even negative offsets are allowed.
-            /// \param nX Horizontal pointer/array offset.
-            /// \param nY Vertical pointer/array offset.
-            /// \return Pointer to the pixel array (or first pixel in array with coordinates (nX, nY).
-            tData *
-            values(int i = 0)
-            {
-                return aValues_ + i;
-            }
+        // assign parent class's data fields (width, height)
+        Signal::operator=(rSignal);
 
-            const
-            tData *
-            values(int i = 0)
-            const
-            {
-                return aValues_ + i;
-            }
+        aValues_ = A::Malloc1D(size());
+        A::Copy1D(aValues_, rSignal.value(), size());
 
-            void
-            swap(SignalTemplate<D, A> &rSignal)
-            {
-                Signal::swap(rSignal);
+        return *this;
+    }
 
-                tData *aTemp       = this->aValues_;
-                this->aValues_      = rSignal.aValues_;
-                rSignal.aValues_    = aTemp;
-            }
+    /// Get a pointer to the pixel array.
+    ///     The result pointer can be offset to pixel at position (x, y) and
+    /// even negative offsets are allowed.
+    /// \param nX Horizontal pointer/array offset.
+    /// \param nY Vertical pointer/array offset.
+    /// \return Pointer to the pixel array (or first pixel in array with coordinates (nX, nY).
+    tData *values(int i = 0) { return aValues_ + i; }
 
-        private:
-            D *aValues_;
-    };
+    const tData *values(int i = 0) const { return aValues_ + i; }
 
-} // npp namespace
+    void swap(SignalTemplate<D, A> &rSignal)
+    {
+        Signal::swap(rSignal);
+
+        tData *aTemp     = this->aValues_;
+        this->aValues_   = rSignal.aValues_;
+        rSignal.aValues_ = aTemp;
+    }
+
+private:
+    D *aValues_;
+};
+
+} // namespace npp
 
 
 #endif // NV_UTIL_NPP_SIGNAL_H

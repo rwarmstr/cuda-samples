@@ -32,12 +32,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __cuda_cuda_h__  // check to see if CUDA_H is included above
+#ifdef __cuda_cuda_h__ // check to see if CUDA_H is included above
 
 // Error Code string definitions here
-typedef struct {
-  char const *error_string;
-  int error_id;
+typedef struct
+{
+    char const *error_string;
+    int         error_id;
 } s_CudaErrorStr;
 
 /**
@@ -104,8 +105,7 @@ static s_CudaErrorStr sCudaDrvErrorString[] = {
      * This indicates that the device ordinal supplied by the user does not
      * correspond to a valid CUDA device.
      */
-    {"CUDA_ERROR_INVALID_DEVICE (device specified is not a valid CUDA device)",
-     101},
+    {"CUDA_ERROR_INVALID_DEVICE (device specified is not a valid CUDA device)", 101},
 
     /**
      * This indicates that the device kernel image is invalid. This can also
@@ -451,20 +451,20 @@ static s_CudaErrorStr sCudaDrvErrorString[] = {
 
 // This is just a linear search through the array, since the error_id's are not
 // always ocurring consecutively
-inline const char *getCudaDrvErrorString(CUresult error_id) {
-  int index = 0;
+inline const char *getCudaDrvErrorString(CUresult error_id)
+{
+    int index = 0;
 
-  while (sCudaDrvErrorString[index].error_id != error_id &&
-         sCudaDrvErrorString[index].error_id != -1) {
-    index++;
-  }
+    while (sCudaDrvErrorString[index].error_id != error_id && sCudaDrvErrorString[index].error_id != -1) {
+        index++;
+    }
 
-  if (sCudaDrvErrorString[index].error_id == error_id)
-    return (const char *)sCudaDrvErrorString[index].error_string;
-  else
-    return (const char *)"CUDA_ERROR not found!";
+    if (sCudaDrvErrorString[index].error_id == error_id)
+        return (const char *)sCudaDrvErrorString[index].error_string;
+    else
+        return (const char *)"CUDA_ERROR not found!";
 }
 
-#endif  // __cuda_cuda_h__
+#endif // __cuda_cuda_h__
 
-#endif  //  COMMON_DRVAPI_ERROR_STRING_H_
+#endif //  COMMON_DRVAPI_ERROR_STRING_H_
